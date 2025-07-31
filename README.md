@@ -41,6 +41,8 @@ EMBEDDINGS_BASE_PATH = "embedding/{}_embeddings.pkl"
 
 ​​Output:​​ Trained model saved in best_model directory (typically best_model.pth).
 
+During training, partition 20% of TR1000.fasta as a validation set for performance evaluation.
+
 ## Step 6: Generate Test Set Predictions​
 Ensure best_model.pth exists in best_model.
 
