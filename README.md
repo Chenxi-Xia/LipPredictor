@@ -22,7 +22,7 @@ output_path = "embedding/train_embeddings.pkl"  # Output embedding path
 
 Training set: TR1000.fasta
 
-Test set: TE197.fasta (original mentions TE197.txt)
+Test set: TE197.fasta
 
 Or your own dataset.
 
