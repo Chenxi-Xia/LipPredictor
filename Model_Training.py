@@ -28,12 +28,10 @@ def set_random_seed(seed=42):
     torch.backends.cudnn.benchmark = False
 
 TRAIN_PATH = "dataset/TR1000.fasta"
-TEST440_PATH = "dataset/TE197.txt"
 EMBEDDINGS_BASE_PATH = "embedding/{}_embeddings.pkl"
 
 original_dataset_path = {
     "train": TRAIN_PATH,
-    "test440": TEST440_PATH,
 }
 
 def load_all_data():
@@ -373,18 +371,6 @@ train_iter = data.DataLoader(train_dataset, batch_size=train_config["batch_size"
 val_iter = data.DataLoader(val_dataset, batch_size=train_config["batch_size"], 
                           shuffle=False, num_workers=4 if torch.cuda.is_available() else 2)
 
-print("Preparing test dataset...")
-test440_data = proteins_dict["test440"]
-test440_total, test440_positive, test440_ratio = calculate_sequence_stats(test440_data)
-print(f"Test440 proteins: {len(test440_data)}")
-print(f"Test440 residues: {test440_total}, Positive residues: {test440_positive}, Ratio: {test440_ratio:.6f}")
-
-test440_samples = generate_samples(test440_data, window_size)
-test440_dataset = SiteDataset(test440_samples)
-test440_iter = data.DataLoader(test440_dataset, batch_size=train_config["batch_size"], 
-                              shuffle=False, num_workers=4 if torch.cuda.is_available() else 2)
-print(f"Test440 samples generated: {len(test440_samples)}")
-
 class ReduceDimLayer(nn.Module):
     def __init__(self, input_dim, hidden_dim):
         super(ReduceDimLayer, self).__init__()
@@ -514,9 +500,6 @@ def main():
         print(f"\nEvaluating validation set...")
         val_auc, val_aupr, val_loss = evaluate_sites(val_iter, model, device)
         
-        print(f"Evaluating test set...")
-        test_auc, test_aupr, test_loss = evaluate_sites(test440_iter, model, device)
-        
         print(f"Evaluating training set...")
         train_auc, train_aupr, _ = evaluate_sites(train_iter, model, device)
         
@@ -524,7 +507,6 @@ def main():
         print(f"\nEpoch {epoch+1}/{train_config['epochs']} ({epoch_time:.1f}s)")
         print(f"  Train Loss: {avg_train_loss:.4f}, AUC: {train_auc:.4f}, AUPR: {train_aupr:.4f}")
         print(f"  Val   Loss: {val_loss:.4f}, AUC: {val_auc:.4f}, AUPR: {val_aupr:.4f}")
-        print(f"  Test  Loss: {test_loss:.4f}, AUC: {test_auc:.4f}, AUPR: {test_aupr:.4f}")
         
         scheduler.step(val_auc)
         
@@ -541,41 +523,6 @@ def main():
             print(f"  Best model saved! (Val AUC: {val_auc:.4f})")
     
     print(f"\nTraining complete! Best model at epoch {best_epoch+1}, Val AUC: {best_val_auc:.4f}")
-    
-    try:
-        import numpy.core.multiarray
-        torch.serialization.add_safe_globals([numpy.core.multiarray.scalar])
-        checkpoint = torch.load("best_model/best_model.pth", weights_only=True)
-    except:
-        print("Warning: Secure loading failed, attempting non-secure load")
-        checkpoint = torch.load("best_model/best_model.pth", weights_only=False)
-    
-    model.load_state_dict(checkpoint['model_state_dict'])
-    model.eval()
-    test_auc, test_aupr, test_loss, (test_probs, test_labels) = evaluate_sites(
-        test440_iter, model, device, return_preds=True
-    )
-    
-    if test_probs.numel() > 0 and test_labels.numel() > 0:
-        test_preds = (test_probs > 0.5).float()
-        accuracy = accuracy_score(test_labels, test_preds)
-        precision = precision_score(test_labels, test_preds, zero_division=0)
-        recall = recall_score(test_labels, test_preds, zero_division=0)
-        f1 = f1_score(test_labels, test_preds, zero_division=0)
-    else:
-        accuracy = 0.0
-        precision = 0.0
-        recall = 0.0
-        f1 = 0.0
-    
-    print("\nFinal test results:")
-    print(f"  Test Loss: {test_loss:.4f}")
-    print(f"  Test AUC:  {test_auc:.4f}")
-    print(f"  Test AUPR: {test_aupr:.4f}")
-    print(f"  Accuracy:  {accuracy:.4f}")
-    print(f"  Precision: {precision:.4f}")
-    print(f"  Recall:    {recall:.4f}")
-    print(f"  F1-score:  {f1:.4f}")
 
 if __name__ == "__main__":
     main()
