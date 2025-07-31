@@ -1,0 +1,5 @@
+tqdm==4.67.1
+numpy==1.26.4
+torch @ https://download.pytorch.org/whl/cu124/torch-2.6.0%2Bcu124-cp311-cp311-linux_x86_64.whl
+scikit-learn==1.2.2
+pandas==2.2.3
