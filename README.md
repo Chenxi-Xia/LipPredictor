@@ -33,7 +33,7 @@ Or your own dataset.
 
 TRAIN_PATH = "dataset/TR1000.fasta"    
 
-TEST440_PATH = "dataset/TE197.txt"                   # Test set file (TE197)
+TEST440_PATH = "dataset/TE197.fasta"                   # Test set file (TE197)
 
 EMBEDDINGS_BASE_PATH = "embedding/{}_embeddings.pkl"  
 
